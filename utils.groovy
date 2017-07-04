@@ -44,32 +44,33 @@ def notifyEmail(String result, String to, def stage_name=null, def errorMessage=
 		String jlink = "(<${env.BUILD_URL}|Open>)"
 		emailadd = committer+'@'+company_suff
 	}
-    def body = """
-              <!DOCTYPE html>
-              <html>
-              <body>
-              <h2> Hi, Jenkins here! </h2>
-                          <p><b> Result for branch: </b> $branch_name </p>
-                          <p><b> Job URL for more information: <a href=$job_console target="_blank">$job_console</a></b>
-                  </body>
-          </html>
-      """
 
-      //In case of failure - the mail will include the step name that failed
-      if (stage_name) {
-          body = body.replaceAll("</body>",
-                "<p><b> Pipeline failed at stage: </b> ${stage_name}</p></body>")
-      }
+	def body = """
+		<!DOCTYPE html>
+		<html>
+		<body>
+		<h2> Hi, Jenkins here! </h2>
+				<p><b> Result for branch: </b> $branch_name </p>
+				<p><b> Job URL for more information: <a href=$job_console target="_blank">$job_console</a></b>
+		</body>
+		</html>
+	"""
 
-      if (errorMessage) {
-          body = body.replaceAll("</body>",
-                "<p><b> The exception was: </b> ${errorMessage}</p></body>")
-      }
+	//In case of failure - the mail will include the step name that failed
+	if (stage_name) {
+		body = body.replaceAll("</body>",
+			"<p><b> Pipeline failed at stage: </b> ${stage_name}</p></body>")
+	}
 
-      //code below sends email using subject and body defined above
-          emailext attachLog: true, body: body, subject: subject,
-          recipientProviders: [[$class: 'RequesterRecipientProvider']],
-          to: committer, mimeType: 'text/html', compressLog: false
+	if (errorMessage) {
+		body = body.replaceAll("</body>",
+			"<p><b> The exception was: </b> ${errorMessage}</p></body>")
+	}
+
+	//code below sends email using subject and body defined above
+		emailext attachLog: true, body: body, subject: subject,
+		recipientProviders: [[$class: 'RequesterRecipientProvider']],
+		to: committer, mimeType: 'text/html', compressLog: false
 }
 
 def run_in_stage(String stage_name, Closure command, String sendTo){
