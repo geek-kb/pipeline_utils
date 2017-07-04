@@ -2,7 +2,6 @@
 import groovy.transform.Field
 
 @Field def jenkins_creds = 'YOUR_CREDENTIALSID_HERE'
-@Field String branch_name = env.BRANCH_NAME
 @Field String company_suff = 'example.com'
 
 def sh_out(cmd){
