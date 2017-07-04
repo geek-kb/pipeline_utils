@@ -120,7 +120,7 @@ def notifyStatus(stage_name, result) {
 			}
 	}
 	
-	notifyEmail(currentBuild.result, emailadd, stage_name)
+	notifyEmail(currentBuild.result, emailadd, stage_name, except)
 	notifySlack(channel, color, message)
 }
 
