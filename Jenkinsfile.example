@@ -1,0 +1,82 @@
+import groovy.transform.Field
+
+channel = '#jenkins-dev-alerts'
+@Field def stage_name, emailadd
+def docker_creds = 'Docker_CredentialsID'
+def git_creds = 'Git_CredentialsID'
+
+fileLoader.withGit('git@bitbucket.org:company/pipeline_utils.git', 'master', git_creds, ''){
+    utils = fileLoader.load('utils.groovy');
+}
+
+def run_in_stage(String stage_name, Closure command){
+    utils.run_in_stage(stage_name, command, emailadd)
+}
+
+def notifyStatus(){
+	utils.notifyStatus(stage_name, currentBuild.result)
+}
+
+node('docker') {
+	timestamps {
+		run_in_stage('Setup and Checkout', {
+			sh '( sudo git reset --hard; sudo git clean -fxd; sudo git tag -d $(git tag) ) &>/dev/null || true'
+			checkout scm
+		        branch_name = env.BRANCH_NAME
+		})
+	
+		run_in_stage('Build', {
+			withCredentials([
+			[$class: 'UsernamePasswordMultiBinding', credentialsId: docker_creds, usernameVariable: 'D_USER', passwordVariable: 'D_PASS'],
+			]){
+			sh """
+				#!/bin/bash -xe
+				docker login company-docker.jfrog.io -u \${D_USER} -p \${D_PASS}
+				export GIT_COMMIT=\$(git rev-parse --short HEAD)
+				export GIT_BRANCH=\$(git rev-parse --abbrev-ref HEAD)
+				docker-compose build
+			"""
+			}
+		})
+	
+		run_in_stage('Test', {
+			sh """
+				docker-compose down
+				docker-compose up --abort-on-container-exit || true
+				docker-compose down
+			"""
+			junit 'reports/**/*.xml'
+			sh '''
+				docker volume prune -f
+			'''
+		})
+	}
+}
+
+if (currentBuild.result == 'UNSTABLE') {
+	currentBuild.result = 'FAILURE'
+}
+
+if (currentBuild.result == null) {
+	currentBuild.result = "SUCCESS"
+}
+
+if (currentBuild.result == "FAILURE") {
+	node('docker') {
+	notifyStatus()
+}
+
+} else if (currentBuild.result == "SUCCESS" && env.BRANCH_NAME=='master') {
+	node('docker') {
+		run_in_stage('Deploy', {
+			sh 'docker-compose push'
+			notifyStatus()
+		})
+	} 
+
+} else if (currentBuild.result == "SUCCESS" && !env.BRANCH_NAME.equals('master')) {
+	node('docker') {
+		print "NOT DEPLOYING!"
+		notifyStatus()
+	}
+}
