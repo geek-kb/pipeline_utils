@@ -1,5 +1,4 @@
 // This file is used for organizational scans
-import static java.util.UUID.randomUUID
 import groovy.transform.Field
 
 @Field def jenkins_creds = 'YOUR_CREDENTIALSID_HERE'
