@@ -90,14 +90,14 @@ def run_in_stage(String stage_name, Closure command, String sendTo){
 			if (currentBuild.result == null) {
 				currentBuild.result = "FAILURE"
 			}
-			this.notifyStatus(stage_name, currentBuild.result)
+			this.notifyStatus(stage_name, currentBuild.result, except)
 			echo "Pipeline failed at stage: ${stage_name}"
 			throw ex
 		}
 	}
 }
 
-def notifyStatus(stage_name, result) {
+def notifyStatus(stage_name, result, except=null) {
 	ulink = getCommitter()
 	jlink = "(<${env.BUILD_URL}|Open>)"
 	emailadd = ulink+'@'+company_suff
