@@ -8,33 +8,12 @@ def sh_out(cmd){
       sh(returnStdout:true, script: cmd).trim()
 }
 
-//def getCommitter(){
-//		withCredentials([
-//        [$class: 'UsernamePasswordMultiBinding', credentialsId: jenkins_creds, usernameVariable: 'J_USER', passwordVariable: 'J_PASS'],
-//        ]){
-//					committer_cmd = """ curl -s -u ${J_USER}:${J_PASS} ${env.BUILD_URL}api/json | python -mjson.tool | grep abso | awk 'NR==1' | cut -d/ -f5 | tr -d '"' | tr -d ',' | tr -d '\n' | sed -e 's/\\.//' """
-//					cmtr = sh_out(committer_cmd)
-//					return cmtr
-//		}
-//}
-
-//def getCommitterFromWS(){
 def getCommitter(){
   cmtrws = this.sh_out('''
       git show -s --format=\'%ce\' | tr -d "'" | cut -d@ -f1
   ''')
   return cmtrws
 }
-
-//def getRepo(){
-//	withCredentials([
-//        [$class: 'UsernamePasswordMultiBinding', credentialsId: jenkins_creds, usernameVariable: 'J_USER', passwordVariable: 'J_PASS'],
-//        ]){
-//          repo_cmd = """ curl -s -u \${J_USER}:\${J_PASS} ${env.BUILD_URL}api/json | python -mjson.tool | grep url | awk 'NR==2' | cut -d/ -f7 """
-//          repo = sh_out(repo_cmd)
-//          return repo
-//    }
-//}
 
 def getRepo(){
 	repo = this.sh_out('basename $(git remote show -n origin | grep Push | cut -d: -f2- | rev | cut -c5- | rev)')
@@ -46,9 +25,7 @@ def notifyEmail(String result, String to, def stage_name=null, def errorMessage=
         [$class: 'UsernamePasswordMultiBinding', credentialsId: jenkins_creds, usernameVariable: 'J_USER', passwordVariable: 'J_PASS'],
         ]){
 				def committer = getCommitter()
-				print "New function - getCommitter: "+committer
 				def repo = getRepo()
-				print "New function - getRepo: "+repo
   		  subject = "${result} building repository $repo branch \"$branch_name\" build #${env.BUILD_ID}!"
   		  job_console = "${env.JOB_URL}${env.BUILD_NUMBER}/console"
 
@@ -114,19 +91,11 @@ def notifyStatus(stage_name, result, except=null) {
     print "!NS emailadd:"+ emailadd
 
 		if(result=='SUCCESS') {
-						color = 'good'
-				if(ulink){
-						message = "Job: *${env.JOB_NAME}* Finished Successfuly! :thumbsup: Committer: <@${ulink}> Log: ${jlink}>"
-				} else {
-						message = "Job: *${env.JOB_NAME}* Finished Successfuly! :thumbsup: Committer: <'Committer not specified in build url' (<!here|here>) Log: ${jlink}>"
-				}
+			color = 'good'
+			message = "Job: *${env.JOB_NAME}* Finished Successfuly! :thumbsup: Committer: <@${ulink}> Log: ${jlink}>"
 		}	else {
-				color = 'danger'
-				if(ulink){
-						message = "Job: *${env.JOB_NAME}* Failed! :thumbsdown: Committer: <@${ulink}> Log: ${jlink}>"
-				} else {
-						message = "Job: *${env.JOB_NAME}* Failed! :thumbsdown: Committer: <'Committer not specified in build url' (<!here|here>) Log: ${jlink}>"
-				}
+			color = 'danger'
+			message = "Job: *${env.JOB_NAME}* Failed! :thumbsdown: Committer: <@${ulink}> Log: ${jlink}>"
 		}
 		notifyEmail(currentBuild.result, emailadd, stage_name, except)
     notifySlack(channel, color, message)
