@@ -1,7 +1,7 @@
 // This file is used for organizational scans
 //import groovy.transform.Field
 
-jenkins_creds = 'c9812afd-9f03-4d5a-8483-02aa0e5d83c5'
+jenkins_creds = 'JENKINS_CREDENTIALSID'
 String branch_name = env.BRANCH_NAME
 
 def sh_out(cmd){
@@ -30,7 +30,7 @@ def notifyEmail(String result, String to, def stage_name=null, def errorMessage=
   		  job_console = "${env.JOB_URL}${env.BUILD_NUMBER}/console"
 
   		  String jlink = "(<${env.BUILD_URL}|Open>)"
-				emailadd = committer+'@fdna.com'
+				emailadd = committer+'@company.com'
     		}
     def body = """
               <!DOCTYPE html>
@@ -72,7 +72,7 @@ def run_in_stage(String stage_name, Closure command, String sendTo){
           println "============================================================"
       } catch (Exception ex) {
           def except = "${ex}"
-          String emailadd = ulink+'@fdna.com'
+          String emailadd = ulink+'@company.com'
           if (currentBuild.result == null) {
             currentBuild.result = "FAILURE" }
 						this.notifyStatus(stage_name, currentBuild.result, except)
@@ -85,7 +85,7 @@ def run_in_stage(String stage_name, Closure command, String sendTo){
 def notifyStatus(stage_name, result, except=null) {
     ulink = getCommitter()
     jlink = "(<${env.BUILD_URL}|Open>)"
-		emailadd = ulink+'@fdna.com'
+		emailadd = ulink+'@company.com'
 		print "Debug information:"
     print "!NS ulink:"+ ulink
     print "!NS emailadd:"+ emailadd
